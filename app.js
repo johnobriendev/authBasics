@@ -6,12 +6,17 @@ const LocalStrategy = require("passport-local").Strategy;
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 const bcrypt = require('bcryptjs');
+const { body, validationResult } = require("express-validator");
+
 
 const mongoDb = process.env.MONGODB_URI;
 mongoose.connect(mongoDb);
 const db = mongoose.connection;
 db.on("error", console.error.bind(console, "mongo connection error"));
 
+
+
+//Models
 const User = mongoose.model(
   "User",
   new Schema({
@@ -19,6 +24,8 @@ const User = mongoose.model(
     password: { type: String, required: true }
   })
 );
+
+
 
 const app = express();
 app.set("views", __dirname);
@@ -79,7 +86,31 @@ app.get("/", (req, res) => {
 
 app.get("/sign-up", (req, res) => res.render("sign-up-form"));
 
-app.post("/sign-up", async (req, res, next) => {
+app.post("/sign-up",
+
+[
+  // Validation rules
+  body('username')
+    .trim()
+    .isLength({ min: 1 }).withMessage('Username is required.')
+    .isAlphanumeric().withMessage('Username must be alphanumeric.')
+    .escape(),
+  body('password')
+    .trim()
+    .isLength({ min: 6 }).withMessage('Password must be at least 6 characters long.')
+    .escape()
+],
+async (req, res, next) => {
+  
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    // There are validation errors. Render the form again with sanitized values/error messages.
+    return res.render('sign-up-form', { 
+      errors: errors.array(),
+      username: req.body.username
+    });
+  }
+  
   bcrypt.hash(req.body.password, 10, async (err, hashedPassword) => {
     if(err){
       return next(err);
