@@ -7,6 +7,8 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 const bcrypt = require('bcryptjs');
 const { body, validationResult } = require("express-validator");
+require('dotenv').config();
+
 
 
 const mongoDb = process.env.MONGODB_URI;
